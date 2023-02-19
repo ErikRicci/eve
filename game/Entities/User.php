@@ -10,7 +10,14 @@ use Game\Enums\CharacterRace;
 use Game\Utils\Traits\IsModel;
 use R2SArrayHelper\Traits\CanBeArray;
 
-class User extends Pawn
+class User
 {
     use CanBeArray, IsModel;
+
+    public function __construct(
+        public int $id = 0,
+        public string $login = '',
+        public string $password = '',
+        public string $created_at = '',
+    ) {}
 }

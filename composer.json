@@ -6,7 +6,8 @@
     "r2soffner/r2s-simple-router": "^0.0.8",
     "r2soffner/r2s-string-helper": "^0.0.4",
     "r2soffner/r2s-array-helper": "^0.0.3",
-    "ext-sqlite3": "*"
+    "ext-sqlite3": "*",
+    "erikricci/gandalf": "^0.0.22"
   },
   "require-dev": {
     "phpunit/phpunit": "^10.0"

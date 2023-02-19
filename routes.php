@@ -1,9 +1,11 @@
 <?php
 
 use Game\Controllers\APIController;
+use R2SSimpleRouter\Route;
 
 return [
-    \R2SSimpleRouter\Route::get('/api', [APIController::class, 'welcome']),
-    \R2SSimpleRouter\Route::post('/api/users/register', [\Game\Actions\User\RegisterAction::class, '__run']),
-    \R2SSimpleRouter\Route::post('/api/users/authenticate', [\Game\Actions\User\AuthenticateAction::class, '__run']),
+    Route::get('/api', [APIController::class, 'welcome']),
+    Route::post('/api/users/register', \Game\Actions\User\RegisterAction::class),
+    Route::post('/api/users/login', \Game\Actions\User\AuthenticateAction::class),
+    Route::get('/api/users/my-account', \Game\Actions\User\MyAccountAction::class)
 ];

@@ -2,28 +2,40 @@
 
 namespace Game\Actions\User;
 
+use Game\Exceptions\Database\User\DuplicateLoginException;
 use Game\Services\User\UserRegisterService;
-use Game\Services\User\UserTokenService;
+use Gandalf\ValidatorFacade;
 use R2SSimpleRouter\Response;
 
 class RegisterAction
 {
     public function __run()
     {
-        $user = UserRegisterService::register(request('login'), request('password'));
-        if (! $user) {
+        $validator = new ValidatorFacade;
+        $requestRules = [
+            'login' => 'required|min:8',
+            'password' => 'required|min:6'
+        ];
+
+        if (! $validator->validate(request()->all(), $requestRules)) {
             Response::error(
-                message: 'There was an error while trying to create your account.'
+                message: 'Invalid payload for route!'
             );
         }
 
-        $token = UserTokenService::generateNewToken();
+        try {
+            UserRegisterService::register(
+                request('login'),
+                request('password')
+            );
+        } catch (DuplicateLoginException $e) {
+            Response::error(
+                message: $e->getMessage(),
+            );
+        }
 
         Response::success(
-            message: 'Logged in successfully',
-            data: [
-                'token' => $token
-            ],
+            message: 'Registered successfully',
         );
     }
 }

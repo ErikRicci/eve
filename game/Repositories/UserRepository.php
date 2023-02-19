@@ -9,7 +9,26 @@ use Game\Singletons\Database;
 
 class UserRepository implements BaseRepository
 {
+    private array $queryColumns = ['*'];
     private array $queryParams = [];
+
+    public function getSingle(): ?array
+    {
+        $query = "SELECT {$this->getQueryColumnsAsString()} FROM users WHERE {$this->getQueryParamsAsString()} LIMIT 1";
+        $content = [];
+        $results = Database::getInstance()->getDB()->prepare($query);
+        foreach (array_values($this->getQueryParams()) as $i => $value) {
+            $results->bindValue($i + 1, $value);
+        }
+        $results = $results->execute();
+        while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
+            $content[] = $row;
+        }
+
+        return array_key_exists(0, $content)
+            ? $content[0]
+            : null;
+    }
 
     public function getAll()
     {
@@ -64,9 +83,22 @@ class UserRepository implements BaseRepository
         return $result;
     }
 
-    public static function getByLoginAndPassword(string $login, string $password)
+    public static function getByLoginAndPassword(string $login, string $password): ?array
     {
-        return (new self)->where(['login' => $login, 'password' => $password])->getAll();
+        return (new self)
+            ->select('id,login,created_at')
+            ->where(
+                [
+                    'login' => $login,
+                    'password' => $password,
+                ]
+            )
+            ->getSingle();
+    }
+
+    public static function getByLogin(string $login): ?array
+    {
+        return (new self)->where(['login' => $login])->getSingle();
     }
 
     public static function create(DTO $userDTO)
@@ -89,26 +121,49 @@ class UserRepository implements BaseRepository
         // TODO: Implement delete() method.
     }
 
-    public function where(array $conditions = ['1' => '1'])
+    public function select(array|string $columns): static
     {
-        $andArray = [];
-        foreach ($conditions as $column => $value) {
-            $andArray[] = ":$column = $value";
-        }
-
-        if ($this->queryParams) {
-            $this->queryParams .= implode(' AND ', $andArray);
+        if (is_array($columns)) {
+            $this->queryColumns = $columns;
         } else {
-            $this->queryParams = 'WHERE ' . implode(' AND ', $andArray);
+            $this->queryColumns = explode(',', $columns);
         }
-
-        dd($andArray);
 
         return $this;
     }
 
-    private function getQueryParams()
+    public function where(array|string $conditions, mixed $value = null): static
     {
-        return $this->queryParams ?: 'WHERE 1 = 1';
+        $conditionsArray = is_array($conditions)
+            ? $conditions
+            : [$conditions => $value];
+
+        $this->queryParams = array_merge($this->queryParams, $conditionsArray);
+
+        return $this;
+    }
+
+    private function getQueryColumns(): array
+    {
+        return $this->queryColumns;
+    }
+
+    private function getQueryColumnsAsString(): string
+    {
+        return implode(' ,', $this->queryColumns);
+    }
+
+    private function getQueryParams(): array
+    {
+        return $this->queryParams;
+    }
+
+    private function getQueryParamsAsString(): string
+    {
+        $andArray = [];
+        foreach (array_keys($this->queryParams) as $column) {
+            $andArray[] = "$column = ?";
+        }
+        return implode(' AND ', $andArray);
     }
 }
